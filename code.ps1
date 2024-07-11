@@ -7,14 +7,38 @@
 
 Set-StrictMode -Version latest
 
-
-$userArray = Get-ChildItem -Path C:\Users
+#PC / Login data
 $pcInfo = (Get-WmiObject -Class Win32_ComputerSystem)
 $pcName = $pcInfo.Name
-$userName = (Get-WmiObject -Class Win32_ComputerSystem).UserName.Split("\")[-1]
-$numUsers = $userArray.Length
-$profileSize = [math]::Round(( Get-Childitem -Path C:\users -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum ).Sum / 1GB)
-$userProfileSize = [math]::Round(( Get-Childitem -Path C:\users\$userName -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum ).Sum / 1GB, 2)
+$userName = $pcInfo.UserName.Split("\")[-1]
 
-Write-Output "There are $numUsers user profiles on PC '$pcName' totalling $profileSize GB user data."
-Write-Output "The current logged in user is $userName, with a profile size of $userProfileSize GB."
+# Profile data
+$profileArray = Get-Childitem -Path C:\users\
+$numUsers = $profileArray.Length
+
+# Create user Vs non-user profile Arrays
+$userArray = New-Object 'System.Collections.ArrayList'
+$nonUserArray = New-Object 'System.Collections.ArrayList'
+foreach($i in $profileArray) {
+    if($i.Name -eq $userName) {
+        $userArray += $i
+    } else {
+        $nonUserArray += $i
+    }
+}
+
+# Calculate size of user, non-user and all profiles
+$userProfileSize = ( Get-Childitem -Path C:\users\$userName -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum ).Sum
+$nonUserProfileSize = 0.0
+foreach($i in $nonUserArray) {
+    $nonUserProfileSize += ( Get-Childitem -Path C:\users\$i -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum ).Sum
+}
+$allUserProfileSize = $userProfileSize + $nonUserProfileSize
+
+# Format display output
+$userSizeDisplay = [math]::Round(($userProfileSize) / 1GB, 2)
+$allUserSizeDisplay = [math]::Round(($allUserProfileSize) / 1GB, 0)
+
+# Output Results
+Write-Output "There are $numUsers user profiles on PC '$pcName' totalling $allUserSizeDisplay GB user data."
+Write-Output "The current logged in user is $userName, with a profile size of $userSizeDisplay GB."
