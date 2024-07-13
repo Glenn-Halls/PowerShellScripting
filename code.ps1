@@ -54,8 +54,9 @@ if ($oneDriveExists) {
 # Format display output
 $userSizeDisplay = [math]::Round(($userProfileSize) / 1GB, 2)
 $allUserSizeDisplay = [math]::Round(($allUserProfileSize) / 1GB, 0)
+$oneDriveDisplay = [math]::Round(($oneDriveSize) / 1GB, 2)
 
 # Output Results
 Write-Output "There are $numUsers user profiles on PC '$pcName' totalling $allUserSizeDisplay GB user data."
 Write-Output "The current logged in user is $userName, with a profile size of $userSizeDisplay GB."
-if ($oneDriveExists) { Write-Output "OneDrive DOES exist...  and is $oneDriveSize in size..." }
+if ($oneDriveExists) { Write-Output "$userName has a OneDrive folder, which is $oneDriveDisplay GB." }
