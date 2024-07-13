@@ -7,7 +7,16 @@
 
 Set-StrictMode -Version latest
 
-#PC / Login data
+# Function to get size of folder including subfolders with option to exclude OneDrive Folder
+Function Get-Size {
+    param (
+        [string] $path,
+        [boolean] $excludeOneDrive = $false
+    ) 
+        return ( Get-Childitem -Path $path -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum ).Sum
+}
+
+# PC / Login data
 $pcInfo = (Get-WmiObject -Class Win32_ComputerSystem)
 $pcName = $pcInfo.Name
 $userName = $pcInfo.UserName.Split("\")[-1]
@@ -28,10 +37,10 @@ foreach($i in $profileArray) {
 }
 
 # Calculate size of user, non-user and all profiles
-$userProfileSize = ( Get-Childitem -Path C:\users\$userName -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum ).Sum
+$userProfileSize = Get-Size("C:\users\$userName")
 $nonUserProfileSize = 0.0
 foreach($i in $nonUserArray) {
-    $nonUserProfileSize += ( Get-Childitem -Path C:\users\$i -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum ).Sum
+    $nonUserProfileSize += Get-Size("C:\users\$i")
 }
 $allUserProfileSize = $userProfileSize + $nonUserProfileSize
 
