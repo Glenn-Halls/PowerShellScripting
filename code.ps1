@@ -65,17 +65,33 @@ $allUserProfileSize = $userProfileSize + $nonUserProfileSize
 
 # Check for user OneDrive Folder & measure size if it exists
 $oneDriveExists = Test-Path -Path C:\users\$userName\OneDrive
-$oneDriveSize = 0.0
-if ($oneDriveExists) {
-    $oneDriveSize = Get-Size("C:\users\$userName\OneDrive")
-}
+$oneDriveSize = if ($oneDriveExists) {
+    Get-Size("C:\users\$userName\OneDrive")
+} else {0}
+
+# Check for PST files and measure size if they exist
+$pstScan = Get-Childitem -path C:\users\$userName -Force -Include *.PST -Recurse -ErrorAction SilentlyContinue
+$pstCount = $pstScan.Count
+$outlookExists = (!$null -eq $pstScan)
+$pstSize = if ($outlookExists) {
+    ( $pstScan | Measure-Object -Property "Length" -Sum ).Sum
+} else {0}
 
 # Format display output
 $displayUser = Format-Size $userProfileSize -decimalPlaces 2
 $displayAllUsers = Format-Size $allUserProfileSize
 $displayOneDrive = Format-Size $oneDriveSize -decimalPlaces 2
+$displayPstSize = Format-Size $pstSize -decimalPlaces 2
+$pstPlural = if ($pstSize -eq 1) {""} else {"s"}
 
 # Output Results
 Write-Output "There are $numUsers user profiles on PC '$pcName' totalling $displayAllUsers user data."
 Write-Output "The current logged in user is $userName, with a profile size of $displayUser."
 if ($oneDriveExists) { Write-Output "$userName has a OneDrive folder, which is $displayOneDrive." }
+if ($outlookExists) { Write-Output "$userName has $pstCount PST file$pstPlural, measuring $displayPstSize." }
+if ($outlookExists) {
+    Write-Output "`n$userName's PST file$pstPlural can be found in the location$pstPlural below:"
+    forEach ($i in $pstScan) {
+        Write-Output "$i"
+    }
+}
