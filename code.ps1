@@ -2,13 +2,13 @@
     This script will pull information about user profiles on a target PC, to determine the size of the current user, and other users' profiles.
     It will also show the user's OneDrive folder size (if it exists) and the size taken up by any .PST files.
     This information is helpful prior to deployment of a replacement PC, to determine space requirements for data backup, or to help a user free
-    up space on their PC.
+    up space on their PC if needed.
 #>
 
 Set-StrictMode -Version latest
 
-# Get size of folder including subfolders with option to exclude OneDrive Folder.
 Function Get-Size {
+    # Get size of folder including subfolders with option to exclude OneDrive Folder.
     param (
         [string] $path,
         [boolean] $excludeOneDrive = $false,
@@ -17,8 +17,8 @@ Function Get-Size {
         return ( Get-Childitem -Path $path -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum ).Sum
 }
 
-# Transform size from [integer] bytes to [string] size for display to user, with optional decimal places if over 1GB.
 Function Format-Size {
+    # Transform size from [integer] bytes to [string] size for display to user, with optional decimal places if over 1GB.
     param (
         [long] $size,
         [int] $decimalPlaces = 0
@@ -83,9 +83,11 @@ $displayAllUsers = Format-Size $allUserProfileSize
 $displayOneDrive = Format-Size $oneDriveSize -decimalPlaces 2
 $displayPstSize = Format-Size $pstSize -decimalPlaces 2
 $pstPlural = if ($pstSize -eq 1) {""} else {"s"}
+$userPlural = if ($numUsers -eq 1) {""} else {"s"}
+$userAreIs = if ($numUsers -eq 1) {"is"} else {"are"}
 
 # Output Results
-Write-Output "There are $numUsers user profiles on PC '$pcName' totalling $displayAllUsers user data."
+Write-Output "There $userAreIs $numUsers user profile$userPlural on PC '$pcName' totalling $displayAllUsers user data."
 Write-Output "The current logged in user is $userName, with a profile size of $displayUser."
 if ($oneDriveExists) { Write-Output "$userName has a OneDrive folder, which is $displayOneDrive." }
 if ($outlookExists) { Write-Output "$userName has $pstCount PST file$pstPlural, measuring $displayPstSize." }
