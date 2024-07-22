@@ -45,7 +45,7 @@ Function Format-Size {
 # PC / Login data
 $pcInfo = (Get-WmiObject -Class Win32_ComputerSystem)
 $pcName = $pcInfo.Name
-$loginExists = ("VIRISREV7\gjhal" -ne $pcInfo.UserName)
+$loginExists = ($null -ne $pcInfo.UserName)
 $userName = if ($loginExists) {$pcInfo.UserName.Split("\")[-1]} else {"NO USER LOGGED ON"}
  
 # Profile data
@@ -66,8 +66,11 @@ foreach($i in $profileArray) {
 # Calculate size of user, non-user and all profiles
 $userProfileSize = if ($loginExists) {Get-Size "C:\Users\$userName"} else {0}
 $nonUserProfileSize = 0
+$nonUserHashTable = @{}
 foreach($i in $nonUserArray) {
-    $nonUserProfileSize += ( Get-Size C:\users\$i )
+    $size = Get-Size C:\users\$i
+    $nonUserProfileSize += $size
+    $nonUserHashTable.Add($i, (Format-Size $size))
 }
 $allUserProfileSize = $userProfileSize + $nonUserProfileSize
  
@@ -99,13 +102,6 @@ Write-Output "There $userAreIs $numUsers user profile$userPlural on PC '$pcName'
 if ($loginExists) {Write-Output "The current logged in user is $userName, with a profile size of $displayUser."}
     else {
         Write-Output "No user is currently logged in to this PC, Pease try again when target user is logged on."
-        Write-Output "`nUser profiles on this PC are as follows:"
-        forEach($i in $nonUserArray) {
-            $name = $i.Name
-            $size = (Get-Size C:\users\$name)
-            $sizeDisplay = Format-Size $size -decimalPlaces 2
-            Write-Output "User: $name  >>>   Profile Size: $sizeDisplay"
-        }
     }
 if ($oneDriveExists) { Write-Output "$userName has a OneDrive folder, which is $displayOneDrive." }
 if ($outlookExists) { Write-Output "$userName has $pstCount PST file$pstPlural, measuring $displayPstSize." }
@@ -114,5 +110,9 @@ if ($outlookExists) {
     forEach ($i in $pstScan) {
         Write-Output "$i"
     }
+}
+if ($null -ne $nonUserHashTable) {
+    Write-Output "`nOther user profiles on this PC are as follows:"
+    Write-Output $nonUserHashTable
 }
  
