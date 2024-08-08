@@ -14,7 +14,7 @@ Function Get-Size {
         [boolean] $excludeOneDrive = $false,
         [boolean] $excludePst = $false
     ) 
-        $size = ( Get-Childitem -Path $path -Force -Recurse -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum )
+        $size = ( Get-Childitem -Path "$path" -Force -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property "Length" -Sum )
  
         # Null check
         if ($null -eq $size) {
@@ -68,7 +68,7 @@ $userProfileSize = if ($loginExists) {Get-Size "C:\Users\$userName"} else {0}
 $nonUserProfileSize = 0
 $nonUserHashTable = @{}
 foreach($i in $nonUserArray) {
-    $size = Get-Size C:\users\$i
+    $size = Get-Size "C:\users\$i"
     $nonUserProfileSize += $size
     $nonUserHashTable.Add($i, (Format-Size $size))
 }
@@ -77,12 +77,12 @@ $allUserProfileSize = $userProfileSize + $nonUserProfileSize
 # Check for user OneDrive Folder & measure size if it exists
 $oneDriveExists = Test-Path -Path C:\Users\$userName\OneDrive
 $oneDriveSize = if ($oneDriveExists) {
-    ( Get-Size C:\users\$userName\OneDrive )
+    ( Get-Size "C:\users\$userName\OneDrive" )
 } else {0}
  
 # Check for PST files and measure size if they exist
 $pstScan = Get-Childitem -path C:\Users\$userName -Force -Include *.PST -Recurse -ErrorAction SilentlyContinue
-$outlookExists = (!$null -eq $pstScan)
+$outlookExists = ($null -ne $pstScan)
 $pstCount = if ($outlookExists) {$pstScan.Count} else {0}
 $pstSize = if ($outlookExists) {
     ( $pstScan | Measure-Object -Property "Length" -Sum ).Sum
@@ -115,4 +115,3 @@ if ($null -ne $nonUserHashTable) {
     Write-Output "`nOther user profiles on this PC are as follows:"
     Write-Output $nonUserHashTable
 }
- 
