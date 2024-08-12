@@ -81,11 +81,11 @@ $oneDriveSize = if ($oneDriveExists) {
 } else {0}
  
 # Check for PST files and measure size if they exist
-$pstScan = Get-Childitem -path C:\Users\$userName -Force -Include *.PST -Recurse -ErrorAction SilentlyContinue
+$pstScan = Get-Childitem -path "C:\Users\$userName" -Force -Include *.PST -Recurse -ErrorAction SilentlyContinue
 $outlookExists = ($null -ne $pstScan)
-$pstCount = if ($outlookExists) {$pstScan.Count} else {0}
+$pstCount = if ($outlookExists) {@($pstScan).Count} else {0}
 $pstSize = if ($outlookExists) {
-    ( $pstScan | Measure-Object -Property "Length" -Sum ).Sum
+    ( @($pstScan) | Measure-Object -Property "Length" -Sum ).Sum
 } else {0}
  
 # Format display output
