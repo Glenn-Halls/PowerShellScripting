@@ -10,6 +10,13 @@ $LoadedHives = Get-ChildItem Registry::HKEY_USERS -ErrorAction SilentlyContinue 
     Select-Object @{name="SID";expression={$_.PSChildName}}
 $UnloadedHives = Compare-Object $UserArray.SID $LoadedHives.SID | Select-Object @{name="SID";expression={$_.InputObject}}
 
+function HideIcon {
+    param (
+        [string] $SID
+    )
+    Write-Output "user SID is $SID"
+}
+
 
 ## Below script will remove spotlight key and add "hidden" attribute to spotlight icon - this will work for current user ONLY
 ##TODO: change below script into a method and use a for-loop for each user in hive
@@ -40,6 +47,21 @@ if(!$iconPathExists){
 }
 
 New-ItemProperty -Path $iconPath -Name $iconKey -Value "1" -PropertyType "DWORD" -Force | Out-Null
+
+foreach ($user in $UserArray) {
+    $name = $user.Username
+    if ($user.SID -in $LoadedHives.SID) {
+        Write-Output "$name is loaded"
+        HideIcon($user.SID)
+    } else {
+        Write-Output "$name is NOT loaded"
+        reg load HKU\$($user.SID) $($user.UserHive) | Out-Null
+        Write-Output "$name is NOW loaded"
+        HideIcon($user.SID)
+        [gc]::Collect()
+        reg unload HKU\$($user.SID) | Out-Null
+    }
+}
 
 
 ## Below is output for testing purposes only
