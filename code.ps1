@@ -10,61 +10,64 @@ $LoadedHives = Get-ChildItem Registry::HKEY_USERS -ErrorAction SilentlyContinue 
     Select-Object @{name="SID";expression={$_.PSChildName}}
 $UnloadedHives = Compare-Object $UserArray.SID $LoadedHives.SID | Select-Object @{name="SID";expression={$_.InputObject}}
 
+## Function to remove "Learn more about this image" icon
 function HideIcon {
     param (
         [string] $SID
     )
+    $spotlightPath = "Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\"
+    $spotlightKey = "{2cc5ca98-6485-489a-920e-b3e88a6ccce3}"
+    $iconPath = "Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel\"
+    $iconKey = $spotlightKey
+
+    $spotlightKeyExists = Test-Path Registry::HKEY_USERS\$SID\$spotlightPath$spotlightKey
+    $iconPathExists = Test-Path Registry::HKEY_USERS\$SID\$iconPath
+
     Write-Output "user SID is $SID"
-}
-
-
-## Below script will remove spotlight key and add "hidden" attribute to spotlight icon - this will work for current user ONLY
-##TODO: change below script into a method and use a for-loop for each user in hive
-##NB: ensure Unloaded Hives have garbage collection and registry unloaded after modification
-$spotlightPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\"
-$spotlightKey = "{2cc5ca98-6485-489a-920e-b3e88a6ccce3}"
-$iconPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel\"
-$iconKey = $spotlightKey
-
-$spotlightKeyExists = Test-Path $spotlightPath$spotlightKey
-$iconPathExists = Test-Path $iconPath
-
-Write-Output "Does spotlight key exist?: " $spotlightKeyExists
-Write-Output "Does icon path exist?: " $iconPathExists
-
-if($spotlightKeyExists){
+    
+    if($spotlightKeyExists){
         Write-Output "Spotlight key DOES exist.... removing..."
-        Remove-Item $spotlightPath$spotlightKey
+        Remove-Item Registry::HKEY_USERS\$SID\$spotlightPath$spotlightKey
     } else {
-        Write-Output "Spotlight key does NOT exist..."
-}
+        Write-Output "Spotlight key does NOT exist... no need to remove..."
+    }
 
-if(!$iconPathExists){
+    if(!$iconPathExists){
         Write-Output "Icon path does not exist... creating...."
-        New-Item -Path $iconPath -Force | Out-Null
+        New-Item -Path Registry::HKEY_USERS\$SID\$iconPath -Force | Out-Null
     } else {
         Write-Output "Icon path already exists..."
+    }
+
+    if ((Get-ItemPropertyValue -Path Registry::HKEY_USERS\$SID\$iconPath -Name $iconKey) -eq 1) {
+        Write-Output "Icon is already hidden"
+    } else {
+        New-ItemProperty -Path Registry::HKEY_USERS\$SID\$iconPath -Name $iconKey -Value "1" -PropertyType "DWORD" -Force | Out-Null
+        Write-Output "Adding `"hidden`" property to icon"
+    }
 }
 
-New-ItemProperty -Path $iconPath -Name $iconKey -Value "1" -PropertyType "DWORD" -Force | Out-Null
+## BEFORE script is run...
+Write-Output "`n`n`nUser Array:" $UserArray
+Write-Output "`n`nLoaded Hives:" $LoadedHives
+Write-Output "`n`nUnloaded Hives:" $UnloadedHives
+Write-Output "`n"
 
+## For loop goes through each user in user array. If hive is loaded will run function HideIcon.
+## If hive is not loaded will load hive, run function HideIcon and then unload hive.
 foreach ($user in $UserArray) {
     $name = $user.Username
+    Write-Output "`nProcessing user: $name"
     if ($user.SID -in $LoadedHives.SID) {
-        Write-Output "$name is loaded"
         HideIcon($user.SID)
     } else {
-        Write-Output "$name is NOT loaded"
         reg load HKU\$($user.SID) $($user.UserHive) | Out-Null
-        Write-Output "$name is NOW loaded"
         HideIcon($user.SID)
         [gc]::Collect()
         reg unload HKU\$($user.SID) | Out-Null
     }
 }
 
-
-## Below is output for testing purposes only
-Write-Output "`n`n`nUser Array:" $UserArray
+## AFTER script is run...
 Write-Output "`n`nLoaded Hives:" $LoadedHives
 Write-Output "`n`nUnloaded Hives:" $UnloadedHives
