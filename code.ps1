@@ -22,6 +22,7 @@ function HideIcon {
 
     $spotlightKeyExists = Test-Path Registry::HKEY_USERS\$SID\$spotlightPath$spotlightKey
     $iconPathExists = Test-Path Registry::HKEY_USERS\$SID\$iconPath
+    $iconKeyValueExists = ($null -ne (Get-ItemProperty -Path Registry::HKEY_USERS\$SID\$iconPath).$iconKey)
 
     Write-Output "user SID is $SID"
     
@@ -39,11 +40,16 @@ function HideIcon {
         Write-Output "Icon path already exists..."
     }
 
-    if ((Get-ItemPropertyValue -Path Registry::HKEY_USERS\$SID\$iconPath -Name $iconKey) -eq 1) {
+    if ($iconKeyValueExists){
+        if ((Get-ItemProperty -Path Registry::HKEY_USERS\$SID\$iconPath).$iconKey -eq 1){
         Write-Output "Icon is already hidden"
+        } else {
+            New-ItemProperty -Path Registry::HKEY_USERS\$SID\$iconPath -Name $iconKey -Value "1" -PropertyType "DWORD" -Force | Out-Null
+            Write-Output "Changing icon key to `"hidden`""
+        }
     } else {
         New-ItemProperty -Path Registry::HKEY_USERS\$SID\$iconPath -Name $iconKey -Value "1" -PropertyType "DWORD" -Force | Out-Null
-        Write-Output "Adding `"hidden`" property to icon"
+        Write-Output "Adding `"hidden`" icon key"
     }
 }
 
