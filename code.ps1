@@ -63,15 +63,21 @@ Write-Output "`n"
 ## If hive is not loaded will load hive, run function HideIcon and then unload hive.
 foreach ($user in $UserArray) {
     $name = $user.Username
+    $userExists = Test-Path $user.UserHive
     Write-Output "`nProcessing user: $name"
     if ($user.SID -in $LoadedHives.SID) {
         HideIcon($user.SID)
     } else {
         reg load HKU\$($user.SID) $($user.UserHive) | Out-Null
-        HideIcon($user.SID)
+        if ($userExists) {
+            HideIcon($user.SID)
+        } else {
+            "User data does not exist... ignoring this user."
+        }
         [gc]::Collect()
         reg unload HKU\$($user.SID) | Out-Null
     }
+    Write-Output "`n`nScript has completed."
 }
 
 ## AFTER script is run...
