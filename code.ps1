@@ -1,6 +1,6 @@
 ## Create an array of users (SID/UserHive/Username) and a list of loaded and unloaded hives
 $SIDPrefix = 'S-1-5-21-\d+-\d+\-\d+\-\d+$'
-$UserArray =  Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' |
+$UserArray = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' |
     Where-Object    {$_.PSChildName -match $SIDPrefix} |
     Select-Object   @{name="SID";expression={$_.PSChildName}},
                     @{name="UserHive";expression={"$($_.ProfileImagePath)\ntuser.dat"}},
@@ -9,6 +9,22 @@ $LoadedHives = Get-ChildItem Registry::HKEY_USERS -ErrorAction SilentlyContinue 
     Where-Object {$_.PSChildname -match $SIDPrefix} | 
     Select-Object @{name="SID";expression={$_.PSChildName}}
 $UnloadedHives = Compare-Object $UserArray.SID $LoadedHives.SID | Select-Object @{name="SID";expression={$_.InputObject}}
+
+## Function to list the loaded and unloaded hives, by username
+function ListHives {
+    Write-Output "`nLoaded Hives:"
+    foreach($user in $UserArray){
+        if ($LoadedHives.SID -contains $user.SID){
+            Write-Output $user.Username
+        }
+    }
+    Write-Output "`nUnloaded Hives:"
+    foreach($user in $UserArray){
+        if ($UnloadedHives.SID -contains $user.SID){
+            Write-Output $user.Username
+        }
+    }
+}
 
 ## Function to remove "Learn more about this image" icon
 function HideIcon {
@@ -22,7 +38,7 @@ function HideIcon {
 
     $spotlightKeyExists = Test-Path Registry::HKEY_USERS\$SID\$spotlightPath$spotlightKey
     $iconPathExists = Test-Path Registry::HKEY_USERS\$SID\$iconPath
-    $iconKeyValueExists = ($null -ne (Get-ItemProperty -Path Registry::HKEY_USERS\$SID\$iconPath).$iconKey)
+    $iconKeyValueExists = ($null -ne (Get-ItemProperty -Path "Registry::HKEY_USERS\$SID\$iconPath" -ErrorAction SilentlyContinue).$iconKey)
 
     Write-Output "user SID is $SID"
     
@@ -45,7 +61,7 @@ function HideIcon {
         Write-Output "Icon is already hidden"
         } else {
             New-ItemProperty -Path Registry::HKEY_USERS\$SID\$iconPath -Name $iconKey -Value "1" -PropertyType "DWORD" -Force | Out-Null
-            Write-Output "Changing icon key to `"hidden`""
+            Write-Output "Changing icon key value to `"hidden`""
         }
     } else {
         New-ItemProperty -Path Registry::HKEY_USERS\$SID\$iconPath -Name $iconKey -Value "1" -PropertyType "DWORD" -Force | Out-Null
@@ -54,13 +70,13 @@ function HideIcon {
 }
 
 ## BEFORE script is run...
-Write-Output "`n`n`nUser Array:" $UserArray
-Write-Output "`n`nLoaded Hives:" $LoadedHives
-Write-Output "`n`nUnloaded Hives:" $UnloadedHives
-Write-Output "`n"
+ListHives
 
-## For loop goes through each user in user array. If hive is loaded will run function HideIcon.
-## If hive is not loaded will load hive, run function HideIcon and then unload hive.
+<#  
+    For loop goes through each user in user array. If hive is loaded will run function HideIcon.
+    If hive is not loaded will check if user data exists on PC. This may not be the case if user folder
+    has been deleted or not created. If data exists will load hive, run function HideIcon then unload hive.
+#> 
 foreach ($user in $UserArray) {
     $name = $user.Username
     $userExists = Test-Path $user.UserHive
@@ -68,18 +84,18 @@ foreach ($user in $UserArray) {
     if ($user.SID -in $LoadedHives.SID) {
         HideIcon($user.SID)
     } else {
-        reg load HKU\$($user.SID) $($user.UserHive) | Out-Null
         if ($userExists) {
+            reg load HKU\$($user.SID) $($user.UserHive) | Out-Null            
             HideIcon($user.SID)
+            [gc]::Collect()
+            reg unload HKU\$($user.SID) | Out-Null            
         } else {
             "User data does not exist... ignoring this user."
         }
-        [gc]::Collect()
-        reg unload HKU\$($user.SID) | Out-Null
     }
-    Write-Output "`n`nScript has completed."
 }
 
 ## AFTER script is run...
-Write-Output "`n`nLoaded Hives:" $LoadedHives
-Write-Output "`n`nUnloaded Hives:" $UnloadedHives
+Write-Output "`n`nScript has completed.`n"
+ListHives
+Write-Output $UserArray
