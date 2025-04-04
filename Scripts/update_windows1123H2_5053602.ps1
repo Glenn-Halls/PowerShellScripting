@@ -22,7 +22,7 @@ if ($safeToUpdate) {
     } else {
         $ProgressPreference = 'SilentlyContinue'
         Invoke-Webrequest -Uri $downloadURI -OutFile "C:\Temp\windowsUpdate.msu"
-        DISM /online /Add-Package /PackagePath:C:\Temp\windowsUpdate.msu /NoRestart
+        DISM /online /Add-Package /PackagePath:C:\Temp\windowsUpdate.msu /NoRestart /quiet
         Remove-Item C:\Temp\windowsUpdate.msu
         Write-Output "`n`nUpdate Completed:"
         Start-Sleep 90
