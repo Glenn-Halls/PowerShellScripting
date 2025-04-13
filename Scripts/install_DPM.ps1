@@ -1,6 +1,6 @@
 # Specify the path to the Dell Display and Peripheral Manager executable
 $ddpmPath = "$env:ProgramFiles\Dell\Dell Peripheral Manager\dpm.exe"
-$downloadURI = "https://exmchw.dm.files.1drv.com/y4mJELfFbyeVGdzzPbiIo9lbJ_StlcntuT7xZXcVCr7oX4TqRLibZLGZ_4XzKZwgSREM8hNlst-itv2odbgqIYvvRw6wJV34f9s4QlwZinpN2ukgIeT_Hh0dOUfD4dEaNvOYNulcxy8j4cD994nekLNUcE1cQlZVkz9o1KeDaObhtLm_-08m83rP4jRcbVGY4QVdQ93x4Ue1dlcd-0fS3aWBw"
+$downloadURI = "https://exmchw.dm.files.1drv.com/y4mgHxn_JaUB8pxp3oeIp5ykM8Zd91raYMZ406DGS8EXpWtx_wR0nvdGmFCzDguZtj7i-IYRqiBlEZ5vhRIZRLobIBVJXZo9osd6Z9ZWwuNsxCDM3jdPfGFHoxdPH7-3ZQisza054lr-C6tKVB20UnifdGOf2YX7OvayidLTR98OrESEwHYxjNEItwfvuNeRL57XS9rhiNtseuGtnse3a0edeWixKnM9iGyEINHEmwYaEo"
 $executable = "C:\Temp\DDPM-Setup_2.0.1.16.exe"
 
 Write-Output "This script will install or update Dell Peripheral Manager"
