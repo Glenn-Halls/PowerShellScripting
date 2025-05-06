@@ -1,5 +1,5 @@
 # Specify the path to the Dell OS Recovery Tool
-$downloadURI = "https://d0frqa.dm.files.1drv.com/y4mziqFAZA5RvG2ciXerng4CYfQ2oBvgQkdo-JNuQnNMxVfUKaK7fFS4LceFF1MX7TAAlCWn7ycjr8mz-wCtPtxjOwJdlc55-fPGxWOLG8ikUVTjIXDNBimK3RQIgeZ3LDE-tA0fh9Jg4t7w4dn0_0qP60LXkxMoohstmCpYsayPSDDPaoegbgL1KhrMqLz2Z7sN1LTB8cDeNFsNs6n6ibpi1S05k1s90gyN8RMlyRYIV8"
+$downloadURI = "https://raw.githubusercontent.com/Glenn-Halls/PowerShellScripting/refs/heads/main/Tools/Packages/Dell-OS-Recovery-Tool_WFFJR_WIN64_2.4.2.2193_A00.EXE"
 $executable = "C:\Temp\SupportAssistOSR_64_2.4.2.2193.exe"
 
 Write-Output "This script will install or update Dell OS Recovery Tool"
